@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Professional To-Do List</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body>
+  <label class="switch">
+    <input type="checkbox" id="darkModeToggle">
+    <span class="slider round"></span> Dark Mode
+  </label>
+
+  <main class="container">
+    <h1>📝 To-Do List</h1>
+
+    <section class="input-area">
+      <input type="text" id="taskInput" placeholder="Enter your task..." />
+      <select id="category">
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+      </select>
+      <button onclick="addTask()">Add</button>
+    </section>
+
+    <ul id="taskList"></ul>
+    <button id="clearBtn">Clear All Tasks</button>
+  </main>
+
+  <script>
+    // Theme setup
+    const darkToggle = document.getElementById("darkModeToggle");
+    const body = document.body;
+    darkToggle.checked = localStorage.getItem("darkMode") === "on";
+    if (darkToggle.checked) body.classList.add("dark");
+
+    darkToggle.addEventListener("change", () => {
+      body.classList.toggle("dark");
+      localStorage.setItem("darkMode", darkToggle.checked ? "on" : "off");
+    });
+
+    // Task Management
+    const taskInput = document.getElementById("taskInput");
+    const categorySelect = document.getElementById("category");
+    const taskList = document.getElementById("taskList");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const getTasks = () => JSON.parse(localStorage.getItem("tasks")) || [];
+    const saveTasks = (tasks) => localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    const loadTasks = () => {
+      const tasks = getTasks();
+      taskList.innerHTML = "";
+      tasks.forEach((task, index) => {
+        const li = document.createElement("li");
+        if (task.done) li.classList.add("done");
+
+        li.innerHTML = `
+          <div>
+            <span class="tag ${task.category.toLowerCase()}">${task.category}</span>
+            ${task.text}
+          </div>
+          <small>${task.timestamp}</small>
+        `;
+
+        li.onclick = () => {
+          tasks[index].done = !tasks[index].done;
+          saveTasks(tasks);
+          loadTasks();
+        };
+
+        const delBtn = document.createElement("button");
+        delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        delBtn.className = "delete-btn";
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          if (confirm("Delete this task?")) {
+            tasks.splice(index, 1);
+            saveTasks(tasks);
+            loadTasks();
+          }
+        };
+
+        li.appendChild(delBtn);
+        taskList.appendChild(li);
+      });
+    };
+
+    const addTask = () => {
+      const text = taskInput.value.trim();
+      const category = categorySelect.value;
+      if (!text) return alert("Please enter a task.");
+
+      const newTask = {
+        text,
+        category,
+        done: false,
+        timestamp: new Date().toLocaleString()
+      };
+
+      const tasks = getTasks();
+      tasks.push(newTask);
+      saveTasks(tasks);
+      taskInput.value = "";
+      loadTasks();
+    };
+
+    clearBtn.onclick = () => {
+      if (confirm("Delete all tasks?")) {
+        localStorage.removeItem("tasks");
+        loadTasks();
+      }
+    };
+
+    window.onload = loadTasks;
+  </script>
+</body>
+</html>
